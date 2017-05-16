@@ -1,4 +1,4 @@
-# Adds support for compiling proto files.
+# Adds support for compiling proto files into a 'gen' directory.
 # Removes .lib generation, just includes all .o files instead
 
 # Override build STYLE on the command line using make STYLE=debug.
@@ -51,8 +51,8 @@ $1: $2
 	$(CC) $(LDFLAGS) -o $$@ $$^ 
 endef
 
-# Find all of the obj files associated with this module.
-define MODULE_OBJ
+# Find all of the obj files associated with the module ($1).
+define MODULE_OBJS
 $(patsubst %.cc, obj/$(TARGET)/%.o, $(filter-out %_bin.cc %_test.cc, $(wildcard $1/*.cc))) \
 	$(patsubst %.proto, obj/$(TARGET)/%.pb.o, $(wildcard $1/*.proto))
 endef
@@ -67,12 +67,16 @@ define MODULE_RULE
 # supplying it with the list of dependencies found in the module/deps file.
 $(foreach BIN, $(patsubst %.cc, %, $(wildcard $(MODULE)/*_bin.cc) $(wildcard $(MODULE)/*_test.cc)), \
 	$(eval $(call BIN_RULE, bin/$(TARGET)/$(BIN), \
-		$(foreach DEP, $(shell cat $(MODULE)/deps), $(call MODULE_OBJ, $(DEP))) $(call MODULE_OBJ, $(MODULE)) obj/$(TARGET)/$(BIN).o)))
+		$(foreach DEP, $(shell cat $(MODULE)/deps), $($(DEP)_OBJS)) $($(MODULE)_OBJS) obj/$(TARGET)/$(BIN).o)))
 
 endef
 
+# Gather names of all objects in each module, assign to special variable <MODULE>_OBJ.
+$(foreach MODULE, $(MODULES), $(eval $(MODULE)_OBJS = $(call MODULE_OBJS, $(MODULE))))
+
 # Invoke the MODULE_RULE for each of the MODULES.
 $(foreach MODULE, $(MODULES), $(eval $(MODULE_RULE)))
+
 
 gen/%.pb.cc: %.proto
 	@mkdir -p $(dir $@)
