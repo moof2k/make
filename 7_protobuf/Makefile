@@ -64,6 +64,7 @@ $(foreach MODULE, $(MODULES), $(eval $(MODULE)_OBJS = $(call MODULE_OBJS, $(MODU
 # For each of the _bin.cc and _test.cc files in the module, create a binary target.
 define MODULE_RULE
 -include $(patsubst %.cc, obj/$(TARGET)/%.d, $(wildcard $(MODULE)/*.cc))
+-include $(patsubst %.proto, obj/$(TARGET)/%.pb.d, $(wildcard $(MODULE)/*.proto))
 
 # For each _bin/_test found within this module, invoke the BIN_RULE on it,
 # supplying it with the list of dependencies found in the module/deps file.
