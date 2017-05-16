@@ -57,9 +57,11 @@ $(patsubst %.cc, obj/$(TARGET)/%.o, $(filter-out %_bin.cc %_test.cc, $(wildcard 
 	$(patsubst %.proto, obj/$(TARGET)/%.pb.o, $(wildcard $1/*.proto))
 endef
 
-# Given $(MODULE), create a rule to build a lib for all code in this
-# module that doesn't end with _bin.cc. For each of the _bin.cc files,
-# create a binary target.
+# Gather names of all objects in each module, assign to special variable <MODULE>_OBJS.
+$(foreach MODULE, $(MODULES), $(eval $(MODULE)_OBJS = $(call MODULE_OBJS, $(MODULE))))
+
+# Given $(MODULE), load the dependencies for each .d file.
+# For each of the _bin.cc and _test.cc files in the module, create a binary target.
 define MODULE_RULE
 -include $(patsubst %.cc, obj/$(TARGET)/%.d, $(wildcard $(MODULE)/*.cc))
 
@@ -70,9 +72,6 @@ $(foreach BIN, $(patsubst %.cc, %, $(wildcard $(MODULE)/*_bin.cc) $(wildcard $(M
 		$(foreach DEP, $(shell cat $(MODULE)/deps), $($(DEP)_OBJS)) $($(MODULE)_OBJS) obj/$(TARGET)/$(BIN).o)))
 
 endef
-
-# Gather names of all objects in each module, assign to special variable <MODULE>_OBJ.
-$(foreach MODULE, $(MODULES), $(eval $(MODULE)_OBJS = $(call MODULE_OBJS, $(MODULE))))
 
 # Invoke the MODULE_RULE for each of the MODULES.
 $(foreach MODULE, $(MODULES), $(eval $(MODULE_RULE)))
